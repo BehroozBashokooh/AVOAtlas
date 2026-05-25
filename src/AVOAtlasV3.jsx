@@ -1335,7 +1335,7 @@ export default function AVOAtlasV2() {
         <header className="mb-5 pb-4 border-b border-stone-300 flex items-baseline justify-between flex-wrap gap-3">
           <div>
             <h1 className="font-serif text-3xl text-stone-900 tracking-tight">AVO Atlas</h1>
-            <span className="text-stone-500 font-serif italic text-sm">v2 · three-layer · Gassmann · flat spot</span>
+            <span className="text-stone-500 font-serif italic text-sm">v3 · three-layer with extended guide </span>
           </div>
           <div className="flex items-center gap-3">
             <Tabs view={view} setView={setView} />
