@@ -52,16 +52,41 @@ npm run preview
 └── README.md              # This file
 ```
 
+## Deployment
+
+This is a static Vite/React app and can be hosted for free.
+
+- Live demo: https://behroozbashokooh.github.io/AVOAtlas/
+- The app uses `vite.config.js` with `base: '/AVOAtlas/'` so GitHub Pages finds the built assets correctly.
+
+### GitHub Pages
+
+1. Push this repo to GitHub.
+2. In repository settings, enable GitHub Pages from the `main` branch.
+3. Build the app locally with:
+
+```bash
+npm run build
+```
+
+4. Serve the generated `dist/` directory with GitHub Pages or a simple static host.
+
+### Other free hosts
+
+- **Vercel** — automatic build and deployment from `main`
+- **Netlify** — automatic deploy from GitHub with a Vite build command
+
+Both work well for this app because it has no backend.
+
 ## Why This Matters
 
-Many exploration geophysicists use AVO classification as a "black box" — remembering that Class III = bright spot and Class I dims with offset, but not understanding *why*. AVO Atlas builds intuition by showing you:
+Explorers and development geoscientists may end up using AVO classification as a "black box" — remembering that Class III = bright spot and Class I dims with offset, but not understanding *why*. AVO Atlas builds intuition by showing you:
 
 1. How rock properties drive the physics (Gassmann)
 2. How interfaces produce angle-dependent reflections (Shuey)
 3. Why the same reservoir can flip from Class III at shallow depths to Class I at depth (impedance trends)
 4. How fluid contacts (flat spots) and production depletion alter the seismic signature (time-lapse)
 
-By the end, you'll know what "Class II" actually means geologically, not just as a label.
 
 ## Notes
 
