@@ -80,26 +80,6 @@ That command runs the production build first, then publishes the result with `gh
 
 Both work well for this app because it has no backend.
 
-## Analytics
-
-The deployed GitHub Pages site includes a privacy-friendly Plausible Analytics hook for `behroozbashokooh.github.io`. It loads only on the production GitHub Pages hostname, so local development visits are ignored.
-
-Plausible will count visits and standard dashboard metrics automatically once the site is added to your Plausible account. The app also sends custom events for:
-
-- `Scenario applied`
-- `Guide section opened`
-- `View changed`
-- `Wavelet type changed`
-- `Wavelet frequency preset`
-- `Lithology changed`
-- `Fluid changed`
-- `Custom acoustic properties enabled`
-- `Custom acoustic properties reset`
-- `Atlas reset`
-- `Engagement milestone`
-
-Create matching custom event goals in Plausible if you want them to appear in the goals section. `Engagement milestone` includes an `active_seconds` property for 60, 180, 300, and 600 seconds.
-
 ## Why This Matters
 
 Explorers and development geoscientists may end up using AVO classification as a "black box" — remembering that Class III = bright spot and Class I dims with offset, but not understanding *why*. AVO Atlas builds intuition by showing you:
