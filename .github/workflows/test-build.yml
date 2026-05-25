@@ -3,18 +3,26 @@ name: Vite Test Deployment
 on:
   push:
     branches:
+      - main
       - dev
       - feature/*
   workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to build & deploy"
+        required: true
+        default: "dev"
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repo
+      # 1. Checkout selected branch (important fix)
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref_name }}
 
       # 2. Setup Node
       - name: Setup Node
@@ -30,7 +38,7 @@ jobs:
       - name: Build
         run: npm run build
 
-      # 5. Deploy to GitHub Pages
+      # 5. Deploy to GitHub Pages (test environment)
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
         with:
