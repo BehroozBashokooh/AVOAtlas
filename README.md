@@ -48,6 +48,7 @@ npm run preview
 
 ```
 .
+├── AVObsidian/             # Obsidian vault with theory, code walkthrough, roadmap, and scenario snapshots
 ├── index.html              # Vite entry point
 ├── src/
 │   ├── main.jsx           # React boot
@@ -55,6 +56,27 @@ npm run preview
 ├── package.json           # Dependencies: React, Vite, Recharts, Lucide icons
 └── README.md              # This file
 ```
+
+## AVObsidian Knowledge Vault
+
+The repository includes an Obsidian vault in [`AVObsidian/`](AVObsidian/) for collaborators who want to understand the code, theory, and design choices before changing the app. It is documentation only; it is not bundled into the deployed GitHub Pages app.
+
+The vault contains:
+
+- **Guidebook index** — [`00 - AVO Atlas Guidebook.md`](AVObsidian/00%20-%20AVO%20Atlas%20Guidebook.md) links the main reading path.
+- **Theory notes** — AVO, Gassmann, Shuey, AVO classes, DHI interpretation, and wavelet/tuning reasoning.
+- **Detailed code walkthrough** — Section-by-section notes under [`03 - Code Walkthrough/`](AVObsidian/03%20-%20Code%20Walkthrough/) explain how `src/AVOAtlasV3.jsx` is organized and how each part connects to the rest of the app.
+- **DHI and scenario notebook** — [`06 - DHI and Scenario Notebook.md`](AVObsidian/06%20-%20DHI%20and%20Scenario%20Notebook.md) includes live atlas snapshots for the DHI cases and all 11 worked scenarios, plus the guide text, settings, predictions, and observations.
+- **Roadmap and contributor workflow** — Future design ideas, refactor notes, and suggested contributor tasks.
+
+To use it:
+
+1. Install [Obsidian](https://obsidian.md/) or use any Markdown editor.
+2. Open `AVObsidian/` as a vault.
+3. Start with `00 - AVO Atlas Guidebook.md`.
+4. Use Obsidian links such as `[[02 - AVO Theory Primer]]` and embedded images from `assets/snapshots/` to move between theory, code, and examples.
+
+One planned improvement is an agent-assisted documentation workflow: after changes to the main codebase, a local agent skill could review the diff, identify affected theory/code-walkthrough notes, add a short change-log entry, refresh scenario snapshots when needed, and flag any stale Obsidian links.
 
 ## Deployment
 

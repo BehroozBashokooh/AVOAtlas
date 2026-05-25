@@ -1,0 +1,217 @@
+{
+  "main": {
+    "id": "457028347c4954be",
+    "type": "split",
+    "children": [
+      {
+        "id": "5ea584f84493ac26",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "3d47c056301877e1",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "d88c2ab226d645f3",
+    "type": "split",
+    "children": [
+      {
+        "id": "7422caf9edb12011",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "438ea5f096ac8a33",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "36c34d57f2afc716",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "cfcfaedc9d516946",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "c6cb38d5776156c3",
+    "type": "split",
+    "children": [
+      {
+        "id": "f2453d28ceb320f5",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "01ad5a7eecfcee6f",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "ff352e93b15651af",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "acf1b968a8a277a8",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "6fd7f7da6253fe4c",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "9be9ad1e23b47682",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "3d47c056301877e1",
+  "lastOpenFiles": [
+    "assets/snapshots/README.md",
+    "08 - Contributor Workflow.md",
+    "07 - Design Roadmap.md",
+    "06 - DHI and Scenario Notebook.md",
+    "05 - Visual Panels and Rendering.md",
+    "04 - Data Flow and State Model.md",
+    "03 - Code Walkthrough.md",
+    "02 - AVO Theory Primer.md",
+    "03 - Code Walkthrough/01 - Imports and File Architecture.md",
+    "03 - Code Walkthrough/00 - Walkthrough Orientation.md",
+    "assets/snapshots/dhi-class-iv.png",
+    "assets/snapshots/dhi-polarity-reversal.png",
+    "assets/snapshots/dhi-flat-spot.png",
+    "assets/snapshots/dhi-bright-spot.png",
+    "assets/snapshots/dhi-dim-spot.png",
+    "assets/snapshots/scenario-11-class-iip-dim.png",
+    "assets/snapshots/scenario-10-thin-bed-tuning.png",
+    "assets/snapshots/scenario-09-oil-versus-gas.png",
+    "assets/snapshots/scenario-08-carbonate.png",
+    "assets/snapshots/scenario-07-depleted-reservoir.png",
+    "01 - Project Map and Design Intent.md",
+    "00 - AVO Atlas Guidebook.md",
+    "03 - Code Walkthrough/13 - Change Recipes.md",
+    "03 - Code Walkthrough/12 - Main Render Layout.md",
+    "03 - Code Walkthrough/11 - Main App State and Derived Model.md",
+    "03 - Code Walkthrough/10 - Guide Components and In-App Guide.md",
+    "03 - Code Walkthrough/09 - Scenario Data and DHI Launchers.md",
+    "03 - Code Walkthrough/08 - Synthetic Gather Rendering.md",
+    "03 - Code Walkthrough/07 - Impedance Log Rendering.md",
+    "03 - Code Walkthrough/06 - Acoustic Properties and Wavelet Controls.md",
+    "03 - Code Walkthrough/05 - Shared UI Primitives.md",
+    "03 - Code Walkthrough/04 - Wavelet Functions.md",
+    "03 - Code Walkthrough/03 - Rock Physics and Reflectivity Helpers.md",
+    "03 - Code Walkthrough/02 - Physics Constants and Presets.md",
+    "03 - Code Walkthrough"
+  ]
+}
