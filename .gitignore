@@ -1,0 +1,34 @@
+## Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+## Build
+dist/
+build/
+.vite/
+
+## Local envs
+.env
+.env.*
+.venv/
+
+## OS
+.DS_Store
+
+## IDE
+.vscode/
+.idea/
+
+## Logs
+*.log
+
+## Python artifacts (if any)
+__pycache__/
+*.py[cod]
+
+## Project-specific: workspace copies and legacy files not needed to run the app
+avo_atlas_v3.jsx
+legacy/
+src/AVOAtlasV2.jsx
