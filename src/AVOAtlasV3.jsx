@@ -129,6 +129,27 @@ const ricker = (t, f) => {
   return (1 - 2 * x2) * Math.exp(-x2);
 };
 
+const sinc = x => (Math.abs(x) < 1e-9 ? 1 : Math.sin(x) / x);
+
+function ormsby(t, f) {
+  const corners = [0.35, 0.65, 1.35, 1.65].map(scale => Math.max(1, f * scale));
+  const raw = (time) => {
+    const [f1, f2, f3, f4] = corners;
+    const term = (hi, lo) => {
+      const pHi = Math.PI * hi;
+      const pLo = Math.PI * lo;
+      return ((pHi ** 2) * (sinc(pHi * time) ** 2) - (pLo ** 2) * (sinc(pLo * time) ** 2)) / (pHi - pLo);
+    };
+    return term(f4, f3) - term(f2, f1);
+  };
+  const norm = raw(0);
+  return norm === 0 ? 0 : raw(t) / norm;
+}
+
+function waveletSample(t, type, frequency) {
+  return type === 'ormsby' ? ormsby(t, frequency) : ricker(t, frequency);
+}
+
 /* ════════════════════════════════════════════════════════════════════
    UI PRIMITIVES
    ════════════════════════════════════════════════════════════════════ */
@@ -289,6 +310,110 @@ function ElasticPropertiesPanel({
   );
 }
 
+function WaveletPreview({ type, frequency, width = 220, height = 72 }) {
+  const margin = { top: 8, right: 12, bottom: 16, left: 12 };
+  const W = width - margin.left - margin.right;
+  const H = height - margin.top - margin.bottom;
+  const midY = margin.top + H / 2;
+  const duration = 0.16;
+  const samples = 96;
+  const xAt = i => margin.left + (i / samples) * W;
+  const yAt = amp => midY - amp * H * 0.42;
+  const path = Array.from({ length: samples + 1 }, (_, i) => {
+    const t = -duration / 2 + (i / samples) * duration;
+    return `${i === 0 ? 'M' : 'L'} ${xAt(i).toFixed(1)} ${yAt(waveletSample(t, type, frequency)).toFixed(1)}`;
+  }).join(' ');
+  const label = type === 'ormsby' ? 'zero-phase Ormsby' : 'zero-phase Ricker';
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-[72px] bg-stone-50 rounded border border-stone-200">
+      <line x1={margin.left} y1={midY} x2={margin.left + W} y2={midY} stroke="#d6d3d1" strokeWidth={0.8} />
+      <path d={path} stroke="#1c1917" strokeWidth={1.6} fill="none" />
+      <text x={width / 2} y={height - 5} textAnchor="middle" fontSize={9} fill="#78716c" fontStyle="italic">
+        {label} · {frequency.toFixed(0)} Hz
+      </text>
+    </svg>
+  );
+}
+
+function WaveletPanel({ type, frequency, onTypeChange, onFrequencyChange, tuningThickness }) {
+  const presets = [15, 25, 30, 40, 60];
+  const typeOptions = [['ricker', 'Ricker'], ['ormsby', 'Ormsby']];
+
+  return (
+    <section className="bg-white border border-stone-200 rounded p-4">
+      <div className="flex items-center justify-between mb-3 pb-2 border-b border-stone-100 gap-2">
+        <h2 className="font-serif text-base text-stone-900 flex items-center gap-2">
+          <Waves size={15} className="text-stone-500" /> Wavelet
+        </h2>
+        <button
+          type="button"
+          onClick={() => {
+            onTypeChange('ricker');
+            onFrequencyChange(30);
+          }}
+          className="text-[11px] text-stone-600 border border-stone-300 rounded px-2 py-1 hover:bg-stone-50"
+        >
+          reset
+        </button>
+      </div>
+
+      <div className="mb-3">
+        <label className="text-[11px] uppercase tracking-wider text-stone-500 block mb-1">Type</label>
+        <div className="inline-flex border border-stone-300 rounded overflow-hidden">
+          {typeOptions.map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onTypeChange(key)}
+              className={`text-[12px] px-3 py-1 font-medium ${
+                type === key ? 'bg-stone-900 text-white' : 'bg-white text-stone-700 hover:bg-stone-100'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <Slider
+        label="Dominant frequency"
+        value={frequency}
+        onChange={onFrequencyChange}
+        min={10}
+        max={80}
+        step={1}
+        unit="Hz"
+        accent="#57534e"
+        fmt={v => v.toFixed(0)}
+      />
+
+      <div className="flex gap-1.5 flex-wrap mb-3">
+        {presets.map(preset => (
+          <button
+            key={preset}
+            type="button"
+            onClick={() => onFrequencyChange(preset)}
+            className={`text-[11px] px-2 py-1 rounded border ${
+              frequency === preset
+                ? 'bg-stone-900 text-white border-stone-900'
+                : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-50'
+            }`}
+          >
+            {preset} Hz
+          </button>
+        ))}
+      </div>
+
+      <WaveletPreview type={type} frequency={frequency} />
+      <div className="mt-2 text-[11px] text-stone-600 leading-snug">
+        <span className="font-medium text-stone-800">λ/4 tuning estimate:</span>{' '}
+        <span className="font-mono tabular-nums">{tuningThickness.toFixed(1)} m</span>
+      </div>
+    </section>
+  );
+}
+
 /* ════════════════════════════════════════════════════════════════════
    IMPEDANCE LOG (the user's sketch, made interactive)
    ════════════════════════════════════════════════════════════════════ */
@@ -406,7 +531,7 @@ function ImpedanceLog({ ob, hc_res, br_res, ub, column_height, hc_fluid, t_top, 
    and base-reservoir reflections.
    ════════════════════════════════════════════════════════════════════ */
 
-function SyntheticGather({ interfaces, t_window, f_dom = 30, width = 460, height = 380 }) {
+function SyntheticGather({ interfaces, t_window, waveletType = 'ricker', f_dom = 30, width = 460, height = 380 }) {
   const margin = { top: 24, right: 16, bottom: 36, left: 36 };
   const W = width - margin.left - margin.right;
   const H = height - margin.top - margin.bottom;
@@ -429,7 +554,7 @@ function SyntheticGather({ interfaces, t_window, f_dom = 30, width = 460, height
       for (const intf of interfaces) {
         if (intf.time === null) continue;
         const R = reflAt(intf.A, intf.B, intf.C, angle);
-        amp += R * ricker(t - intf.time, f_dom);
+        amp += R * waveletSample(t - intf.time, waveletType, f_dom);
       }
       samples[i] = amp;
     }
@@ -699,7 +824,7 @@ const SCENARIOS = [
     id: 'thin_bed_tuning',
     number: 10,
     title: 'Tuning thickness — thin bed effects',
-    geology: 'Bright-spot gas reservoir as scenario 2, but with thickness reduced from 50 m to 18 m — just below the tuning thickness for a 30 Hz wavelet (≈20 m given Vp ≈ 2400 m/s in the gas zone).',
+    geology: 'Bright-spot gas reservoir as scenario 2, but with thickness reduced from 50 m to 18 m — just below the default tuning thickness for a 30 Hz wavelet (≈20 m given Vp ≈ 2400 m/s in the gas zone).',
     settings: { ob_hard: 'soft', ub_hard: 'medium', lithology: 'unconsolidated_sand', phi: 0.28, hc_fluid: 'gas', hc_sat: 0.80, column_height: 0.55, thickness: 18 },
     predictions: {
       impedanceLog: 'Reservoir interval is visually compressed — top, dashed contact, and base are all close together in time.',
@@ -1207,7 +1332,7 @@ function GuideView({ onApplyScenario }) {
 
           <h3 className="font-serif text-lg text-stone-900 mt-5">3. The synthetic gather — from reflectivity to wavelets</h3>
 
-          <p>The gather panel shows what you would see on real seismic data. At each interface time, a 30 Hz Ricker wavelet is convolved with the angle-dependent reflection coefficient R(θ). Each column of the gather corresponds to a different incidence angle, and the systematic change in wavelet amplitude across the angle axis is the AVO signature made visible. The vertical axis is two-way time, anchored to 1.000 s at top reservoir.</p>
+          <p>The gather panel shows what you would see on real seismic data. At each interface time, a zero-phase wavelet is convolved with the angle-dependent reflection coefficient R(θ). The atlas defaults to a 30 Hz Ricker wavelet, but the wavelet panel lets you switch to an Ormsby-style bandpass wavelet and test lower or higher dominant frequencies. Each column of the gather corresponds to a different incidence angle, and the systematic change in wavelet amplitude across the angle axis is the AVO signature made visible. The vertical axis is two-way time, anchored to 1.000 s at top reservoir.</p>
 
           <h3 className="font-serif text-lg text-stone-900 mt-5">4. Three interfaces in one reservoir</h3>
 
@@ -1230,7 +1355,7 @@ function GuideView({ onApplyScenario }) {
             <li><strong>Pore fluid</strong> — gas effects are dramatic; oil milder; brine produces no anomaly relative to brine.</li>
             <li><strong>HC saturation</strong> — non-linear because of Reuss averaging. Most of the AVO change happens in the first 10–15% of gas saturation.</li>
             <li><strong>HC column height</strong> — moves the flat spot vertically inside the reservoir. The per-interface AVO does not change; only the geometry does.</li>
-            <li><strong>Reservoir thickness</strong> — below tuning (~λ/4 ≈ 20 m for 30 Hz), the wavelets at TR, FC and BR start to interfere. This is separate physics from AVO and must be accounted for separately in real interpretation.</li>
+            <li><strong>Reservoir thickness</strong> — below tuning (~λ/4, shown live in the wavelet panel), the wavelets at TR, FC and BR start to interfere. This is separate physics from AVO and must be accounted for separately in real interpretation.</li>
           </ul>
         </div>
       </section>
@@ -1404,7 +1529,7 @@ function GuideView({ onApplyScenario }) {
 
           <div className="border-l-2 border-stone-300 pl-4 py-1">
             <p className="font-medium text-stone-900">Sweep thickness from 80 m down to 15 m.</p>
-            <p className="text-[13px] text-stone-700 mt-0.5">The crossplot dots stay put — AVO is an interface property. But the gather changes character as the wavelets begin to overlap. Below tuning thickness (≈20 m for 30 Hz), amplitudes can no longer be read directly as reflectivities — a major caveat for amplitude mapping on real data.</p>
+            <p className="text-[13px] text-stone-700 mt-0.5">The crossplot dots stay put — AVO is an interface property. But the gather changes character as the wavelets begin to overlap. Below tuning thickness, amplitudes can no longer be read directly as reflectivities — a major caveat for amplitude mapping on real data. Use the wavelet frequency control to see that tuning threshold move.</p>
           </div>
 
           <div className="border-l-2 border-stone-300 pl-4 py-1">
@@ -1451,6 +1576,8 @@ export default function AVOAtlasV2() {
   const [hc_sat, setHcSat] = useState(0.80);
   const [column_height, setColumnHeight] = useState(0.55);
   const [thickness, setThickness] = useState(50); // metres, true thickness
+  const [waveletType, setWaveletType] = useState('ricker');
+  const [waveletFrequency, setWaveletFrequency] = useState(30);
   // User-editable range for the thickness slider — defaults the user can override
   const [thickness_min, setThicknessMin] = useState(15);
   const [thickness_max, setThicknessMax] = useState(120);
@@ -1534,6 +1661,11 @@ export default function AVOAtlasV2() {
   }, [customElastic, elasticOverrides, elasticDefaults]);
 
   const { ob, hc_res, br_res, ub } = effectiveElastic;
+  const tuningThickness = useMemo(() => {
+    const eff = hc_fluid === 'brine' ? 0 : column_height;
+    const reservoirVp = eff > 0 ? hc_res.Vp : br_res.Vp;
+    return reservoirVp / (4 * waveletFrequency);
+  }, [hc_fluid, column_height, hc_res.Vp, br_res.Vp, waveletFrequency]);
 
   const enableCustomElastic = useCallback(() => {
     setElasticOverrides(elasticDefaults);
@@ -1643,6 +1775,8 @@ export default function AVOAtlasV2() {
     setLithology('unconsolidated_sand'); setPhi(0.28);
     setHcFluid('gas'); setHcSat(0.80);
     setColumnHeight(0.55); setThickness(50);
+    setWaveletType('ricker');
+    setWaveletFrequency(30);
     setThicknessMin(15); setThicknessMax(120);
   }, []);
 
@@ -1795,6 +1929,14 @@ export default function AVOAtlasV2() {
               )}
             </section>
 
+            <WaveletPanel
+              type={waveletType}
+              frequency={waveletFrequency}
+              onTypeChange={setWaveletType}
+              onFrequencyChange={setWaveletFrequency}
+              tuningThickness={tuningThickness}
+            />
+
             <ElasticPropertiesPanel
               defaults={elasticDefaults}
               values={effectiveElastic}
@@ -1825,6 +1967,8 @@ export default function AVOAtlasV2() {
                 <SyntheticGather
                   interfaces={interfacesWithTime}
                   t_window={timing.t_window}
+                  waveletType={waveletType}
+                  f_dom={waveletFrequency}
                 />
                 <PolarityLegend />
               </div>
@@ -1946,7 +2090,7 @@ export default function AVOAtlasV2() {
           Reservoir Vp/Vs/ρ are computed from porosity and fluid via Gassmann fluid substitution (Reuss average for the
           fluid mixture; modulus drop in the matrix is small for liquids, large for gas). Three interfaces are tracked:
           top reservoir, fluid contact (when 0 &lt; column &lt; 1), and base reservoir; each gets its own Shuey AVO. The
-          synthetic gather is a 30 Hz Ricker convolved with the angle-dependent reflectivity series. Dry-rock moduli for each
+          synthetic gather uses a selectable zero-phase wavelet convolved with the angle-dependent reflectivity series. Dry-rock moduli for each
           lithology are simple empirical fits, not Hashin–Shtrikman — the numbers are in the right ballpark for learning AVO
           behaviour, but treat absolute values as illustrative. Created by Behrooz Bashokooh. Find all the code:{' '}
           <a
