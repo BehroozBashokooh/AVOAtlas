@@ -89,6 +89,14 @@ function shueyTerms(Vp1, Vs1, r1, Vp2, Vs2, r2) {
   return { A, B, C };
 }
 
+function poissonRatio(Vp, Vs) {
+  const vp2 = Vp * Vp;
+  const vs2 = Vs * Vs;
+  const denom = 2 * (vp2 - vs2);
+  if (denom === 0) return NaN;
+  return (vp2 - 2 * vs2) / denom;
+}
+
 const reflAt = (A, B, C, deg) => {
   const t = (deg * Math.PI) / 180;
   const s2 = Math.sin(t) ** 2;
@@ -168,6 +176,10 @@ function Stat({ label, value, color }) {
   );
 }
 
+function RhoSymbol() {
+  return <span className="font-serif italic normal-case tracking-normal text-[1.08em]">ρ</span>;
+}
+
 function ElasticNumber({ value, onChange, step = 1, color }) {
   return (
     <input
@@ -197,11 +209,15 @@ function ElasticPropertiesPanel({
     { key: 'br_res', label: 'Brine res', color: FLUIDS.brine.color },
     { key: 'ub', label: 'UB', color: '#1c1917' },
   ];
+  const formatPoisson = rock => {
+    const nu = poissonRatio(rock.Vp, rock.Vs);
+    return Number.isFinite(nu) ? nu.toFixed(3) : '—';
+  };
 
   return (
     <section className="bg-white border border-stone-200 rounded p-4">
       <div className="flex items-center justify-between mb-2 pb-2 border-b border-stone-100 gap-2">
-        <h2 className="font-serif text-base text-stone-900">Elastic properties</h2>
+        <h2 className="font-serif text-base text-stone-900">Acoustic properties</h2>
         {customElastic ? (
           <button
             type="button"
@@ -224,35 +240,44 @@ function ElasticPropertiesPanel({
       {!customElastic ? (
         <>
           <Stat label="OB · AI" value={values.ob.AI.toFixed(2)} />
+          <Stat label="OB · Poisson ratio" value={formatPoisson(values.ob)} />
           <Stat label="HC-sat reservoir · Vp" value={values.hc_res.Vp.toFixed(0) + ' m/s'} color={hcColor} />
-          <Stat label="HC-sat reservoir · ρ"  value={values.hc_res.rho.toFixed(3) + ' g/cc'} color={hcColor} />
+          <Stat label={<>HC-sat reservoir · density <RhoSymbol /></>} value={values.hc_res.rho.toFixed(3) + ' g/cc'} color={hcColor} />
+          <Stat label="HC-sat reservoir · Poisson ratio" value={formatPoisson(values.hc_res)} color={hcColor} />
           <Stat label="HC-sat reservoir · AI" value={values.hc_res.AI.toFixed(2)} color={hcColor} />
           <Stat label="Brine-sat reservoir · Vp" value={values.br_res.Vp.toFixed(0) + ' m/s'} color={FLUIDS.brine.color} />
+          <Stat label={<>Brine-sat reservoir · density <RhoSymbol /></>} value={values.br_res.rho.toFixed(3) + ' g/cc'} color={FLUIDS.brine.color} />
+          <Stat label="Brine-sat reservoir · Poisson ratio" value={formatPoisson(values.br_res)} color={FLUIDS.brine.color} />
           <Stat label="Brine-sat reservoir · AI" value={values.br_res.AI.toFixed(2)} color={FLUIDS.brine.color} />
           <Stat label="UB · AI" value={values.ub.AI.toFixed(2)} />
+          <Stat label="UB · Poisson ratio" value={formatPoisson(values.ub)} />
         </>
       ) : (
-        <div className="space-y-2">
-          <div className="grid grid-cols-[1fr_4rem_4rem_4rem_3.5rem] gap-1 items-center text-[10px] uppercase tracking-wider text-stone-400">
+        <div className="space-y-2 overflow-x-auto">
+          <div className="grid min-w-[24rem] grid-cols-[3.8rem_3.75rem_3.75rem_4.5rem_3.25rem_3.5rem] gap-1 items-center text-[10px] uppercase tracking-wider text-stone-400">
             <span>zone</span>
             <span className="text-right">Vp</span>
             <span className="text-right">Vs</span>
-            <span className="text-right">ρ</span>
+            <span className="text-right">Density <RhoSymbol /></span>
+            <span className="text-right">ν</span>
             <span className="text-right">AI</span>
           </div>
           {rows.map(row => {
             const v = values[row.key];
             const d = defaults[row.key];
             return (
-              <div key={row.key} className="grid grid-cols-[1fr_4rem_4rem_4rem_3.5rem] gap-1 items-center">
+              <div key={row.key} className="grid min-w-[24rem] grid-cols-[3.8rem_3.75rem_3.75rem_4.5rem_3.25rem_3.5rem] gap-1 items-center">
                 <span className="text-[11px] text-stone-500 uppercase tracking-wider">{row.label}</span>
                 <ElasticNumber value={Math.round(v.Vp)} onChange={next => onElasticChange(row.key, 'Vp', next)} color={row.color} />
                 <ElasticNumber value={Math.round(v.Vs)} onChange={next => onElasticChange(row.key, 'Vs', next)} color={row.color} />
                 <ElasticNumber value={v.rho.toFixed(3)} step={0.001} onChange={next => onElasticChange(row.key, 'rho', next)} color={row.color} />
                 <span className="text-[12px] font-mono tabular-nums text-right" style={{ color: row.color }}>
+                  {formatPoisson(v)}
+                </span>
+                <span className="text-[12px] font-mono tabular-nums text-right" style={{ color: row.color }}>
                   {v.AI.toFixed(2)}
                 </span>
-                <span className="col-start-2 col-span-4 text-[10px] text-stone-400 font-mono tabular-nums">
+                <span className="col-start-2 col-span-5 text-[10px] text-stone-400 font-mono tabular-nums">
                   default {d.Vp.toFixed(0)} / {d.Vs.toFixed(0)} / {d.rho.toFixed(3)}
                 </span>
               </div>
@@ -700,6 +725,50 @@ const SCENARIOS = [
   },
 ];
 
+const DHI_LAUNCHERS = [
+  {
+    id: 'dhi-bright-spot',
+    name: 'Bright spot',
+    actions: [
+      { label: 'Try', scenarioId: 'class_III_gas' },
+      { label: 'Compare brine', scenarioId: 'background_brine', secondary: true },
+    ],
+  },
+  {
+    id: 'dhi-flat-spot',
+    name: 'Flat spot',
+    actions: [
+      { label: 'Try sand', scenarioId: 'class_III_gas' },
+      { label: 'Try carbonate', scenarioId: 'carbonate', secondary: true },
+    ],
+  },
+  {
+    id: 'dhi-polarity-reversal',
+    name: 'Polarity reversal',
+    actions: [
+      { label: 'Try IIp', scenarioId: 'class_IIp_dim' },
+      { label: 'Try Class I', scenarioId: 'class_I_hard', secondary: true },
+    ],
+  },
+  {
+    id: 'dhi-dim-spot',
+    name: 'Dim spot',
+    actions: [
+      { label: 'Try IIp', scenarioId: 'class_IIp_dim' },
+      { label: 'Try II', scenarioId: 'class_II_balanced', secondary: true },
+    ],
+  },
+  {
+    id: 'dhi-class-iv',
+    name: 'Anomalous gradient',
+    actions: [
+      { label: 'Try', scenarioId: 'class_IV' },
+    ],
+  },
+];
+
+const findScenario = id => SCENARIOS.find(s => s.id === id);
+
 /* ════════════════════════════════════════════════════════════════════
    AI vs DEPTH DIAGRAM — schematic compaction trends with class regions
    ════════════════════════════════════════════════════════════════════ */
@@ -856,7 +925,7 @@ const Eq = ({ children }) => (
 
 function ScenarioCard({ scenario, onApply }) {
   return (
-    <section className="border border-stone-200 rounded p-5 bg-stone-50/40">
+    <section id={`scenario-${scenario.id}`} className="border border-stone-200 rounded p-5 bg-stone-50/40 scroll-mt-6">
       <div className="flex items-baseline justify-between gap-3 mb-3 pb-2 border-b border-stone-200">
         <h3 className="font-serif text-lg text-stone-900 leading-tight">
           <span className="text-stone-400 mr-2 font-mono text-sm tabular-nums">#{scenario.number}</span>
@@ -901,6 +970,93 @@ function ScenarioCard({ scenario, onApply }) {
         <div className="border-l-2 border-amber-400 pl-3 py-1.5 italic text-stone-700 bg-amber-50/40">
           <span className="font-sans text-[11px] not-italic uppercase tracking-wider text-stone-500 mr-1">Learning point ·</span>
           {scenario.observation}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CompactScenarioLaunchers({ onApplyScenario, onOpenGuideSection }) {
+  const buttonClass = action => action.secondary
+    ? 'text-[11px] px-2.5 py-1 bg-stone-100 text-stone-700 rounded hover:bg-stone-200 font-medium whitespace-nowrap'
+    : 'text-[11px] px-2.5 py-1 bg-stone-900 text-white rounded hover:bg-stone-700 font-medium whitespace-nowrap';
+
+  return (
+    <section className="bg-white border border-stone-200 rounded p-4">
+      <div className="flex items-baseline justify-between gap-3 mb-3 pb-2 border-b border-stone-100">
+        <h2 className="font-serif text-base text-stone-900">Scenario launchers</h2>
+        <button
+          type="button"
+          onClick={() => onOpenGuideSection('guide-dhi')}
+          className="text-[11px] text-stone-500 underline underline-offset-2 hover:text-stone-900"
+        >
+          open guide
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(17rem,0.65fr)_minmax(0,1.35fr)] gap-4">
+        <div>
+          <h3 className="text-[11px] uppercase tracking-wider text-stone-500 mb-2">Direct hydrocarbon indicators</h3>
+          <div className="space-y-1.5">
+            {DHI_LAUNCHERS.map(dhi => (
+              <div key={dhi.id} className="flex items-center justify-between gap-2 border-b border-stone-100 last:border-0 pb-1.5 last:pb-0">
+                <a
+                  href={`#${dhi.id}`}
+                  onClick={e => {
+                    e.preventDefault();
+                    onOpenGuideSection(dhi.id);
+                  }}
+                  className="text-left text-[12px] font-medium text-stone-800 underline underline-offset-2 hover:text-stone-950"
+                >
+                  {dhi.name}
+                </a>
+                <div className="flex gap-1.5 flex-wrap justify-end">
+                  {dhi.actions.map(action => {
+                    const scenario = findScenario(action.scenarioId);
+                    return (
+                      <button
+                        key={`${dhi.id}-${action.scenarioId}-${action.label}`}
+                        type="button"
+                        onClick={() => scenario && onApplyScenario(scenario.settings)}
+                        className={buttonClass(action)}
+                      >
+                        {action.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-[11px] uppercase tracking-wider text-stone-500 mb-2">Worked scenarios</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-x-3 gap-y-1.5">
+            {SCENARIOS.map(scenario => (
+              <div key={scenario.id} className="flex items-center justify-between gap-2 border-b border-stone-100 pb-1.5">
+                <a
+                  href={`#scenario-${scenario.id}`}
+                  onClick={e => {
+                    e.preventDefault();
+                    onOpenGuideSection(`scenario-${scenario.id}`);
+                  }}
+                  className="min-w-0 truncate text-left text-[12px] text-stone-800 underline underline-offset-2 hover:text-stone-950"
+                  title={scenario.title}
+                >
+                  <span className="text-stone-400 font-mono tabular-nums mr-1">#{scenario.number}</span>
+                  {scenario.title}
+                </a>
+                <button
+                  type="button"
+                  onClick={() => onApplyScenario(scenario.settings)}
+                  className="text-[11px] px-2.5 py-1 bg-stone-900 text-white rounded hover:bg-stone-700 font-medium whitespace-nowrap"
+                >
+                  Try
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -1080,14 +1236,14 @@ function GuideView({ onApplyScenario }) {
       </section>
 
       {/* === DHI catalog section === */}
-      <section className="bg-white border border-stone-200 rounded p-6 mb-4">
+      <section id="guide-dhi" className="bg-white border border-stone-200 rounded p-6 mb-4 scroll-mt-6">
         <h2 className="font-serif text-2xl text-stone-900 mb-1">Direct hydrocarbon indicators (DHIs)</h2>
         <p className="text-[12px] italic text-stone-500 mb-4">Each DHI below corresponds to one or more scenarios in the list further down. Click the <em>Try</em> button to load the relevant scenario into the live atlas.</p>
 
         <div className="font-serif text-[14px] text-stone-800 leading-relaxed space-y-5">
 
           {/* Bright spot */}
-          <div className="border-l-[3px] pl-4 py-1" style={{ borderColor: '#b91c1c' }}>
+          <div id="dhi-bright-spot" className="border-l-[3px] pl-4 py-1 scroll-mt-6" style={{ borderColor: '#b91c1c' }}>
             <h3 className="font-serif text-base text-stone-900 mb-1">Bright spot</h3>
             <p className="text-[13px] text-stone-700">
               <strong>What it is.</strong> A reflection significantly stronger than the surrounding background, indicating an anomalously large impedance contrast. The classical DHI — and the one most students learn first — but also the source of the most false-positive interpretations in real exploration.
@@ -1099,11 +1255,11 @@ function GuideView({ onApplyScenario }) {
               <strong>Pitfalls.</strong> Tuning of thin clean sands, hard streaks, salt or basalt edges, igneous bodies, top-of-coal reflections, and shallow chalk crests can all produce strong reflections that mimic a gas bright spot. The AVO behaviour (brightening with offset) is what distinguishes a real Class III from a hard kick.
             </p>
             <div className="flex gap-2 mt-2 flex-wrap">
-              <button onClick={() => onApplyScenario(SCENARIOS.find(s => s.id === 'class_III_gas').settings)}
+              <button onClick={() => onApplyScenario(findScenario('class_III_gas').settings)}
                       className="text-[12px] px-3 py-1 bg-stone-900 text-white rounded hover:bg-stone-700 font-medium">
                 Try the bright spot
               </button>
-              <button onClick={() => onApplyScenario(SCENARIOS.find(s => s.id === 'background_brine').settings)}
+              <button onClick={() => onApplyScenario(findScenario('background_brine').settings)}
                       className="text-[12px] px-3 py-1 bg-stone-200 text-stone-800 rounded hover:bg-stone-300 font-medium">
                 Compare with brine background
               </button>
@@ -1111,7 +1267,7 @@ function GuideView({ onApplyScenario }) {
           </div>
 
           {/* Flat spot */}
-          <div className="border-l-[3px] pl-4 py-1" style={{ borderColor: '#a16207' }}>
+          <div id="dhi-flat-spot" className="border-l-[3px] pl-4 py-1 scroll-mt-6" style={{ borderColor: '#a16207' }}>
             <h3 className="font-serif text-base text-stone-900 mb-1">Flat spot</h3>
             <p className="text-[13px] text-stone-700">
               <strong>What it is.</strong> A horizontal reflection cutting across structural dip, marking the gas-water or gas-oil contact inside the reservoir. The most direct of the DHIs because fluid contacts are flat (or nearly so) under gravity, while structural features dip — a flat reflection in a dipping reservoir cannot be a stratigraphic feature.
@@ -1123,11 +1279,11 @@ function GuideView({ onApplyScenario }) {
               <strong>Carbonates beware.</strong> Because Gassmann fluid substitution moves stiff carbonates only slightly, the flat spot in a gas carbonate reservoir is typically <em>tiny</em> — barely detectable above noise. DHI workflows tuned for clastics fail in carbonate provinces precisely here.
             </p>
             <div className="flex gap-2 mt-2 flex-wrap">
-              <button onClick={() => onApplyScenario(SCENARIOS.find(s => s.id === 'class_III_gas').settings)}
+              <button onClick={() => onApplyScenario(findScenario('class_III_gas').settings)}
                       className="text-[12px] px-3 py-1 bg-stone-900 text-white rounded hover:bg-stone-700 font-medium">
                 Try a strong flat spot (sand)
               </button>
-              <button onClick={() => onApplyScenario(SCENARIOS.find(s => s.id === 'carbonate').settings)}
+              <button onClick={() => onApplyScenario(findScenario('carbonate').settings)}
                       className="text-[12px] px-3 py-1 bg-stone-200 text-stone-800 rounded hover:bg-stone-300 font-medium">
                 Compare to weak carbonate flat spot
               </button>
@@ -1135,7 +1291,7 @@ function GuideView({ onApplyScenario }) {
           </div>
 
           {/* Polarity reversal */}
-          <div className="border-l-[3px] pl-4 py-1" style={{ borderColor: '#7e22ce' }}>
+          <div id="dhi-polarity-reversal" className="border-l-[3px] pl-4 py-1 scroll-mt-6" style={{ borderColor: '#7e22ce' }}>
             <h3 className="font-serif text-base text-stone-900 mb-1">Polarity reversal</h3>
             <p className="text-[13px] text-stone-700">
               <strong>What it is.</strong> A reflection whose sign changes — either across angle within a single gather, or laterally along a stacked section. The within-gather version is the AVO diagnostic of Class IIp (and sometimes Class I when the gradient is strong enough). The lateral version occurs where a stratigraphic horizon transitions from wet (positive amplitude) to gas-charged (negative amplitude) along its updip extent.
@@ -1147,11 +1303,11 @@ function GuideView({ onApplyScenario }) {
               <strong>How to recognise it.</strong> The black-filled wavelet on the near-trace turns into an unfilled trough on the far-trace, or vice versa. On angle-gather displays it is one of the most visually striking DHIs.
             </p>
             <div className="flex gap-2 mt-2 flex-wrap">
-              <button onClick={() => onApplyScenario(SCENARIOS.find(s => s.id === 'class_IIp_dim').settings)}
+              <button onClick={() => onApplyScenario(findScenario('class_IIp_dim').settings)}
                       className="text-[12px] px-3 py-1 bg-stone-900 text-white rounded hover:bg-stone-700 font-medium">
                 Try the Class IIp reversal
               </button>
-              <button onClick={() => onApplyScenario(SCENARIOS.find(s => s.id === 'class_I_hard').settings)}
+              <button onClick={() => onApplyScenario(findScenario('class_I_hard').settings)}
                       className="text-[12px] px-3 py-1 bg-stone-200 text-stone-800 rounded hover:bg-stone-300 font-medium">
                 Also seen in Class I far offsets
               </button>
@@ -1159,7 +1315,7 @@ function GuideView({ onApplyScenario }) {
           </div>
 
           {/* Dim spot */}
-          <div className="border-l-[3px] pl-4 py-1" style={{ borderColor: '#9a3412' }}>
+          <div id="dhi-dim-spot" className="border-l-[3px] pl-4 py-1 scroll-mt-6" style={{ borderColor: '#9a3412' }}>
             <h3 className="font-serif text-base text-stone-900 mb-1">Dim spot</h3>
             <p className="text-[13px] text-stone-700">
               <strong>What it is.</strong> An anomalously <em>weak</em> reflection where geological context predicts a stronger one. The opposite signature to a bright spot — and harder to see because you are looking for an absence rather than a presence.
@@ -1171,11 +1327,11 @@ function GuideView({ onApplyScenario }) {
               <strong>How to find them.</strong> Gradient stacks (B-stacks) and far-offset stacks reveal both forms. The Class IIp version also gives itself away on the gather as polarity reversal — the most direct signature.
             </p>
             <div className="flex gap-2 mt-2 flex-wrap">
-              <button onClick={() => onApplyScenario(SCENARIOS.find(s => s.id === 'class_IIp_dim').settings)}
+              <button onClick={() => onApplyScenario(findScenario('class_IIp_dim').settings)}
                       className="text-[12px] px-3 py-1 bg-stone-900 text-white rounded hover:bg-stone-700 font-medium">
                 Try the Class IIp dim spot
               </button>
-              <button onClick={() => onApplyScenario(SCENARIOS.find(s => s.id === 'class_II_balanced').settings)}
+              <button onClick={() => onApplyScenario(findScenario('class_II_balanced').settings)}
                       className="text-[12px] px-3 py-1 bg-stone-200 text-stone-800 rounded hover:bg-stone-300 font-medium">
                 Try the Class II hide
               </button>
@@ -1183,7 +1339,7 @@ function GuideView({ onApplyScenario }) {
           </div>
 
           {/* Anomalous gradient — Class IV */}
-          <div className="border-l-[3px] pl-4 py-1" style={{ borderColor: '#1d4ed8' }}>
+          <div id="dhi-class-iv" className="border-l-[3px] pl-4 py-1 scroll-mt-6" style={{ borderColor: '#1d4ed8' }}>
             <h3 className="font-serif text-base text-stone-900 mb-1">Anomalous gradient (Class IV)</h3>
             <p className="text-[13px] text-stone-700">
               <strong>What it is.</strong> A bright soft loop on the near offset that <em>weakens</em> with offset — the opposite of the classical bright-spot AVO behaviour. Counter-intuitively, this is sometimes a real gas signature rather than a wet sand.
@@ -1195,7 +1351,7 @@ function GuideView({ onApplyScenario }) {
               <strong>Why it matters.</strong> Misinterpreting a Class IV bright spot as a wet sand is a classic exploration mistake. Conversely, drilling a Class IV anomaly as if it were Class III (expecting bigger gas effects) leads to overestimated reserves.
             </p>
             <div className="flex gap-2 mt-2 flex-wrap">
-              <button onClick={() => onApplyScenario(SCENARIOS.find(s => s.id === 'class_IV').settings)}
+              <button onClick={() => onApplyScenario(findScenario('class_IV').settings)}
                       className="text-[12px] px-3 py-1 bg-stone-900 text-white rounded hover:bg-stone-700 font-medium">
                 Try the Class IV anomaly
               </button>
@@ -1322,6 +1478,15 @@ export default function AVOAtlasV2() {
     setView('atlas');
     // Scroll to top so the user sees the freshly-applied configuration.
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const openGuideSection = useCallback((sectionId) => {
+    setView('guide');
+    if (typeof window === 'undefined') return;
+    window.history.replaceState(null, '', `#${sectionId}`);
+    window.setTimeout(() => {
+      document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
   }, []);
 
   // ─── Derived rock-physics ─────────────────────────────────────────
@@ -1768,6 +1933,11 @@ export default function AVOAtlasV2() {
                 </div>
               </section>
             </div>
+
+            <CompactScenarioLaunchers
+              onApplyScenario={applyScenario}
+              onOpenGuideSection={openGuideSection}
+            />
           </main>
         </div>
 
