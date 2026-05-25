@@ -89,6 +89,18 @@ function shueyTerms(Vp1, Vs1, r1, Vp2, Vs2, r2) {
   return { A, B, C };
 }
 
+function akiRichardsTerms(Vp1, Vs1, r1, Vp2, Vs2, r2) {
+  const Vp = (Vp1 + Vp2) / 2;
+  const Vs = (Vs1 + Vs2) / 2;
+  const rho = (r1 + r2) / 2;
+  const dVp = Vp2 - Vp1, dVs = Vs2 - Vs1, drho = r2 - r1;
+  const A = 0.5 * (dVp / Vp + drho / rho);
+  const C = 0.5 * (dVp / Vp);
+  const k2 = (Vs / Vp) ** 2;
+  const B = C - 2 * k2 * (drho / rho + 2 * (dVs / Vs));
+  return { A, B, C };
+}
+
 function poissonRatio(Vp, Vs) {
   const vp2 = Vp * Vp;
   const vs2 = Vs * Vs;
@@ -1578,6 +1590,7 @@ export default function AVOAtlasV2() {
   const [thickness, setThickness] = useState(50); // metres, true thickness
   const [waveletType, setWaveletType] = useState('ricker');
   const [waveletFrequency, setWaveletFrequency] = useState(30);
+  const [avoEquation, setAvoEquation] = useState('shuey');
   // User-editable range for the thickness slider — defaults the user can override
   const [thickness_min, setThicknessMin] = useState(15);
   const [thickness_max, setThicknessMax] = useState(120);
@@ -1722,11 +1735,12 @@ export default function AVOAtlasV2() {
       upper: reservoir_lower, lower: ub,
     });
 
+    const termFunc = avoEquation === 'aki_richards' ? akiRichardsTerms : shueyTerms;
     return list.map(intf => {
-      const t = shueyTerms(intf.upper.Vp, intf.upper.Vs, intf.upper.rho, intf.lower.Vp, intf.lower.Vs, intf.lower.rho);
+      const t = termFunc(intf.upper.Vp, intf.upper.Vs, intf.upper.rho, intf.lower.Vp, intf.lower.Vs, intf.lower.rho);
       return { ...intf, A: t.A, B: t.B, C: t.C, cls: classify(t.A, t.B) };
     });
-  }, [ob, ub, hc_res, br_res, column_height, hc_fluid]);
+  }, [ob, ub, hc_res, br_res, column_height, hc_fluid, avoEquation]);
 
   // ─── Time-to-depth (TWT) for each interface ──────────────────────
   const timing = useMemo(() => {
@@ -1927,6 +1941,21 @@ export default function AVOAtlasV2() {
                   Saturation and column-height controls are inactive.
                 </p>
               )}
+            </section>
+
+            <section className="bg-white border border-stone-200 rounded p-4">
+              <h2 className="font-serif text-base text-stone-900 mb-3 pb-2 border-b border-stone-100 flex items-center gap-2">
+                <Waves size={15} className="text-stone-500" /> AVO equation
+              </h2>
+              <Select
+                label="Formula"
+                value={avoEquation}
+                onChange={setAvoEquation}
+                options={[['shuey', 'Shuey'], ['aki_richards', 'Aki & Richards']]}
+              />
+              <p className="text-[11px] text-stone-500 italic mt-1 leading-snug">
+                Pick whether the AVO reflectivity coefficients are computed from the Shuey approximation or the Aki–Richards form.
+              </p>
             </section>
 
             <WaveletPanel
