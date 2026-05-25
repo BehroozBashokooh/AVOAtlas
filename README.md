@@ -96,4 +96,6 @@ Explorers and development geoscientists may end up using AVO classification as a
 
 ## License
 
-This tool is provided as-is for educational use. Share, modify, and distribute freely.
+This project is licensed under the MIT License.
+
+AVO Atlas is provided as-is for educational use. You may use, copy, modify, and distribute it freely, provided that the copyright and license notice are preserved. See [LICENSE](LICENSE) for details.
