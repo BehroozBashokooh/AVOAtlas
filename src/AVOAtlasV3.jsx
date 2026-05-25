@@ -1,9 +1,14 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine,
   ResponsiveContainer, ScatterChart, Scatter, ReferenceArea
 } from 'recharts';
 import { RotateCcw, Droplet, Layers, Waves } from 'lucide-react';
+
+function trackEvent(name, props = {}, options = {}) {
+  if (typeof window === 'undefined' || typeof window.plausible !== 'function') return;
+  window.plausible(name, { props, ...options });
+}
 
 /* ════════════════════════════════════════════════════════════════════
    PHYSICS — fluids, minerals, dry-rock, Gassmann, Shuey
@@ -365,7 +370,10 @@ function WaveletPanel({ type, frequency, onTypeChange, onFrequencyChange, tuning
             <button
               key={key}
               type="button"
-              onClick={() => onTypeChange(key)}
+              onClick={() => {
+                onTypeChange(key);
+                trackEvent('Wavelet type changed', { type: key });
+              }}
               className={`text-[12px] px-3 py-1 font-medium ${
                 type === key ? 'bg-stone-900 text-white' : 'bg-white text-stone-700 hover:bg-stone-100'
               }`}
@@ -393,7 +401,10 @@ function WaveletPanel({ type, frequency, onTypeChange, onFrequencyChange, tuning
           <button
             key={preset}
             type="button"
-            onClick={() => onFrequencyChange(preset)}
+            onClick={() => {
+              onFrequencyChange(preset);
+              trackEvent('Wavelet frequency preset', { frequency_hz: preset });
+            }}
             className={`text-[11px] px-2 py-1 rounded border ${
               frequency === preset
                 ? 'bg-stone-900 text-white border-stone-900'
@@ -1030,7 +1041,10 @@ function Tabs({ view, setView }) {
       {tabs.map(t => (
         <button
           key={t.id}
-          onClick={() => setView(t.id)}
+          onClick={() => {
+            setView(t.id);
+            trackEvent('View changed', { view: t.id });
+          }}
           className={`text-[13px] px-4 py-1.5 font-medium transition-colors ${
             view === t.id ? 'bg-stone-900 text-white' : 'bg-white text-stone-700 hover:bg-stone-100'
           }`}
@@ -1057,7 +1071,7 @@ function ScenarioCard({ scenario, onApply }) {
           {scenario.title}
         </h3>
         <button
-          onClick={() => onApply(scenario.settings)}
+          onClick={() => onApply(scenario.settings, 'guide_scenario', scenario.id)}
           className="text-[12px] px-3 py-1.5 bg-stone-900 text-white rounded hover:bg-stone-700 font-medium whitespace-nowrap"
         >
           Try in Atlas →
@@ -1142,7 +1156,7 @@ function CompactScenarioLaunchers({ onApplyScenario, onOpenGuideSection }) {
                       <button
                         key={`${dhi.id}-${action.scenarioId}-${action.label}`}
                         type="button"
-                        onClick={() => scenario && onApplyScenario(scenario.settings)}
+                        onClick={() => scenario && onApplyScenario(scenario.settings, 'atlas_dhi', scenario.id)}
                         className={buttonClass(action)}
                       >
                         {action.label}
@@ -1174,7 +1188,7 @@ function CompactScenarioLaunchers({ onApplyScenario, onOpenGuideSection }) {
                 </a>
                 <button
                   type="button"
-                  onClick={() => onApplyScenario(scenario.settings)}
+                  onClick={() => onApplyScenario(scenario.settings, 'atlas_scenario', scenario.id)}
                   className="text-[11px] px-2.5 py-1 bg-stone-900 text-white rounded hover:bg-stone-700 font-medium whitespace-nowrap"
                 >
                   Try
@@ -1380,11 +1394,11 @@ function GuideView({ onApplyScenario }) {
               <strong>Pitfalls.</strong> Tuning of thin clean sands, hard streaks, salt or basalt edges, igneous bodies, top-of-coal reflections, and shallow chalk crests can all produce strong reflections that mimic a gas bright spot. The AVO behaviour (brightening with offset) is what distinguishes a real Class III from a hard kick.
             </p>
             <div className="flex gap-2 mt-2 flex-wrap">
-              <button onClick={() => onApplyScenario(findScenario('class_III_gas').settings)}
+              <button onClick={() => onApplyScenario(findScenario('class_III_gas').settings, 'guide_dhi', 'class_III_gas')}
                       className="text-[12px] px-3 py-1 bg-stone-900 text-white rounded hover:bg-stone-700 font-medium">
                 Try the bright spot
               </button>
-              <button onClick={() => onApplyScenario(findScenario('background_brine').settings)}
+              <button onClick={() => onApplyScenario(findScenario('background_brine').settings, 'guide_dhi', 'background_brine')}
                       className="text-[12px] px-3 py-1 bg-stone-200 text-stone-800 rounded hover:bg-stone-300 font-medium">
                 Compare with brine background
               </button>
@@ -1404,11 +1418,11 @@ function GuideView({ onApplyScenario }) {
               <strong>Carbonates beware.</strong> Because Gassmann fluid substitution moves stiff carbonates only slightly, the flat spot in a gas carbonate reservoir is typically <em>tiny</em> — barely detectable above noise. DHI workflows tuned for clastics fail in carbonate provinces precisely here.
             </p>
             <div className="flex gap-2 mt-2 flex-wrap">
-              <button onClick={() => onApplyScenario(findScenario('class_III_gas').settings)}
+              <button onClick={() => onApplyScenario(findScenario('class_III_gas').settings, 'guide_dhi', 'class_III_gas')}
                       className="text-[12px] px-3 py-1 bg-stone-900 text-white rounded hover:bg-stone-700 font-medium">
                 Try a strong flat spot (sand)
               </button>
-              <button onClick={() => onApplyScenario(findScenario('carbonate').settings)}
+              <button onClick={() => onApplyScenario(findScenario('carbonate').settings, 'guide_dhi', 'carbonate')}
                       className="text-[12px] px-3 py-1 bg-stone-200 text-stone-800 rounded hover:bg-stone-300 font-medium">
                 Compare to weak carbonate flat spot
               </button>
@@ -1428,11 +1442,11 @@ function GuideView({ onApplyScenario }) {
               <strong>How to recognise it.</strong> The black-filled wavelet on the near-trace turns into an unfilled trough on the far-trace, or vice versa. On angle-gather displays it is one of the most visually striking DHIs.
             </p>
             <div className="flex gap-2 mt-2 flex-wrap">
-              <button onClick={() => onApplyScenario(findScenario('class_IIp_dim').settings)}
+              <button onClick={() => onApplyScenario(findScenario('class_IIp_dim').settings, 'guide_dhi', 'class_IIp_dim')}
                       className="text-[12px] px-3 py-1 bg-stone-900 text-white rounded hover:bg-stone-700 font-medium">
                 Try the Class IIp reversal
               </button>
-              <button onClick={() => onApplyScenario(findScenario('class_I_hard').settings)}
+              <button onClick={() => onApplyScenario(findScenario('class_I_hard').settings, 'guide_dhi', 'class_I_hard')}
                       className="text-[12px] px-3 py-1 bg-stone-200 text-stone-800 rounded hover:bg-stone-300 font-medium">
                 Also seen in Class I far offsets
               </button>
@@ -1452,11 +1466,11 @@ function GuideView({ onApplyScenario }) {
               <strong>How to find them.</strong> Gradient stacks (B-stacks) and far-offset stacks reveal both forms. The Class IIp version also gives itself away on the gather as polarity reversal — the most direct signature.
             </p>
             <div className="flex gap-2 mt-2 flex-wrap">
-              <button onClick={() => onApplyScenario(findScenario('class_IIp_dim').settings)}
+              <button onClick={() => onApplyScenario(findScenario('class_IIp_dim').settings, 'guide_dhi', 'class_IIp_dim')}
                       className="text-[12px] px-3 py-1 bg-stone-900 text-white rounded hover:bg-stone-700 font-medium">
                 Try the Class IIp dim spot
               </button>
-              <button onClick={() => onApplyScenario(findScenario('class_II_balanced').settings)}
+              <button onClick={() => onApplyScenario(findScenario('class_II_balanced').settings, 'guide_dhi', 'class_II_balanced')}
                       className="text-[12px] px-3 py-1 bg-stone-200 text-stone-800 rounded hover:bg-stone-300 font-medium">
                 Try the Class II hide
               </button>
@@ -1476,7 +1490,7 @@ function GuideView({ onApplyScenario }) {
               <strong>Why it matters.</strong> Misinterpreting a Class IV bright spot as a wet sand is a classic exploration mistake. Conversely, drilling a Class IV anomaly as if it were Class III (expecting bigger gas effects) leads to overestimated reserves.
             </p>
             <div className="flex gap-2 mt-2 flex-wrap">
-              <button onClick={() => onApplyScenario(findScenario('class_IV').settings)}
+              <button onClick={() => onApplyScenario(findScenario('class_IV').settings, 'guide_dhi', 'class_IV')}
                       className="text-[12px] px-3 py-1 bg-stone-900 text-white rounded hover:bg-stone-700 font-medium">
                 Try the Class IV anomaly
               </button>
@@ -1587,8 +1601,26 @@ export default function AVOAtlasV2() {
   // ─── View state (Atlas | Guide) ──────────────────────────────────
   const [view, setView] = useState('atlas');
 
+  useEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+    const milestones = [60, 180, 300, 600];
+    const sent = new Set();
+    let activeSeconds = 0;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+      activeSeconds += 15;
+      milestones.forEach(seconds => {
+        if (activeSeconds >= seconds && !sent.has(seconds)) {
+          sent.add(seconds);
+          trackEvent('Engagement milestone', { active_seconds: seconds }, { interactive: false });
+        }
+      });
+    }, 15000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   // Apply a scenario's full settings to the live atlas, then switch to atlas view.
-  const applyScenario = useCallback((s) => {
+  const applyScenario = useCallback((s, source = 'guide', scenarioId = 'unknown') => {
     setObHard(s.ob_hard);
     setUbHard(s.ub_hard);
     setLithology(s.lithology);
@@ -1603,12 +1635,20 @@ export default function AVOAtlasV2() {
     setThicknessMin(prev => Math.min(prev, s.thickness));
     setThicknessMax(prev => Math.max(prev, s.thickness));
     setView('atlas');
+    trackEvent('Scenario applied', {
+      scenario_id: scenarioId,
+      source,
+      lithology: s.lithology,
+      fluid: s.hc_fluid,
+      thickness_m: s.thickness,
+    });
     // Scroll to top so the user sees the freshly-applied configuration.
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   const openGuideSection = useCallback((sectionId) => {
     setView('guide');
+    trackEvent('Guide section opened', { section_id: sectionId });
     if (typeof window === 'undefined') return;
     window.history.replaceState(null, '', `#${sectionId}`);
     window.setTimeout(() => {
@@ -1670,11 +1710,13 @@ export default function AVOAtlasV2() {
   const enableCustomElastic = useCallback(() => {
     setElasticOverrides(elasticDefaults);
     setCustomElastic(true);
+    trackEvent('Custom acoustic properties enabled');
   }, [elasticDefaults]);
 
   const resetElasticDefaults = useCallback(() => {
     setCustomElastic(false);
     setElasticOverrides(null);
+    trackEvent('Custom acoustic properties reset');
   }, []);
 
   const updateElasticValue = useCallback((zone, field, value) => {
@@ -1778,6 +1820,7 @@ export default function AVOAtlasV2() {
     setWaveletType('ricker');
     setWaveletFrequency(30);
     setThicknessMin(15); setThicknessMax(120);
+    trackEvent('Atlas reset');
   }, []);
 
   const lithCfg = LITHOLOGY[lithology];
@@ -1832,7 +1875,11 @@ export default function AVOAtlasV2() {
               <h2 className="font-serif text-base text-stone-900 mb-3 pb-2 border-b border-stone-100">Reservoir matrix</h2>
               <Select
                 label="Lithology"
-                value={lithology} onChange={setLithology}
+                value={lithology}
+                onChange={next => {
+                  setLithology(next);
+                  trackEvent('Lithology changed', { lithology: next });
+                }}
                 options={Object.entries(LITHOLOGY).map(([k, v]) => [k, v.name])}
               />
               <Slider
@@ -1902,7 +1949,11 @@ export default function AVOAtlasV2() {
               </h2>
               <Select
                 label="Pore fluid"
-                value={hc_fluid} onChange={setHcFluid}
+                value={hc_fluid}
+                onChange={next => {
+                  setHcFluid(next);
+                  trackEvent('Fluid changed', { fluid: next });
+                }}
                 options={[['gas', 'Gas'], ['oil', 'Oil'], ['brine', 'Brine only (no HC)']]}
               />
               {hc_fluid !== 'brine' ? (
