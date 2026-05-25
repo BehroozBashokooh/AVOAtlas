@@ -168,6 +168,102 @@ function Stat({ label, value, color }) {
   );
 }
 
+function ElasticNumber({ value, onChange, step = 1, color }) {
+  return (
+    <input
+      type="number"
+      value={value}
+      min={0}
+      step={step}
+      onChange={e => onChange(parseFloat(e.target.value))}
+      className="w-16 px-1 py-0.5 border border-stone-300 rounded text-right font-mono tabular-nums text-[12px] focus:outline-none focus:border-stone-500"
+      style={{ color: color || '#1c1917' }}
+    />
+  );
+}
+
+function ElasticPropertiesPanel({
+  defaults,
+  values,
+  customElastic,
+  onEnableCustom,
+  onReset,
+  onElasticChange,
+  hcColor,
+}) {
+  const rows = [
+    { key: 'ob', label: 'OB', color: '#1c1917' },
+    { key: 'hc_res', label: 'HC res', color: hcColor },
+    { key: 'br_res', label: 'Brine res', color: FLUIDS.brine.color },
+    { key: 'ub', label: 'UB', color: '#1c1917' },
+  ];
+
+  return (
+    <section className="bg-white border border-stone-200 rounded p-4">
+      <div className="flex items-center justify-between mb-2 pb-2 border-b border-stone-100 gap-2">
+        <h2 className="font-serif text-base text-stone-900">Elastic properties</h2>
+        {customElastic ? (
+          <button
+            type="button"
+            onClick={onReset}
+            className="inline-flex items-center gap-1 text-[11px] text-stone-600 border border-stone-300 rounded px-2 py-1 hover:bg-stone-50"
+          >
+            <RotateCcw size={12} /> reset
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onEnableCustom}
+            className="text-[11px] text-stone-600 border border-stone-300 rounded px-2 py-1 hover:bg-stone-50"
+          >
+            custom
+          </button>
+        )}
+      </div>
+
+      {!customElastic ? (
+        <>
+          <Stat label="OB · AI" value={values.ob.AI.toFixed(2)} />
+          <Stat label="HC-sat reservoir · Vp" value={values.hc_res.Vp.toFixed(0) + ' m/s'} color={hcColor} />
+          <Stat label="HC-sat reservoir · ρ"  value={values.hc_res.rho.toFixed(3) + ' g/cc'} color={hcColor} />
+          <Stat label="HC-sat reservoir · AI" value={values.hc_res.AI.toFixed(2)} color={hcColor} />
+          <Stat label="Brine-sat reservoir · Vp" value={values.br_res.Vp.toFixed(0) + ' m/s'} color={FLUIDS.brine.color} />
+          <Stat label="Brine-sat reservoir · AI" value={values.br_res.AI.toFixed(2)} color={FLUIDS.brine.color} />
+          <Stat label="UB · AI" value={values.ub.AI.toFixed(2)} />
+        </>
+      ) : (
+        <div className="space-y-2">
+          <div className="grid grid-cols-[1fr_4rem_4rem_4rem_3.5rem] gap-1 items-center text-[10px] uppercase tracking-wider text-stone-400">
+            <span>zone</span>
+            <span className="text-right">Vp</span>
+            <span className="text-right">Vs</span>
+            <span className="text-right">ρ</span>
+            <span className="text-right">AI</span>
+          </div>
+          {rows.map(row => {
+            const v = values[row.key];
+            const d = defaults[row.key];
+            return (
+              <div key={row.key} className="grid grid-cols-[1fr_4rem_4rem_4rem_3.5rem] gap-1 items-center">
+                <span className="text-[11px] text-stone-500 uppercase tracking-wider">{row.label}</span>
+                <ElasticNumber value={Math.round(v.Vp)} onChange={next => onElasticChange(row.key, 'Vp', next)} color={row.color} />
+                <ElasticNumber value={Math.round(v.Vs)} onChange={next => onElasticChange(row.key, 'Vs', next)} color={row.color} />
+                <ElasticNumber value={v.rho.toFixed(3)} step={0.001} onChange={next => onElasticChange(row.key, 'rho', next)} color={row.color} />
+                <span className="text-[12px] font-mono tabular-nums text-right" style={{ color: row.color }}>
+                  {v.AI.toFixed(2)}
+                </span>
+                <span className="col-start-2 col-span-4 text-[10px] text-stone-400 font-mono tabular-nums">
+                  default {d.Vp.toFixed(0)} / {d.Vs.toFixed(0)} / {d.rho.toFixed(3)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
 /* ════════════════════════════════════════════════════════════════════
    IMPEDANCE LOG (the user's sketch, made interactive)
    ════════════════════════════════════════════════════════════════════ */
@@ -389,8 +485,8 @@ function SyntheticGather({ interfaces, t_window, f_dom = 30, width = 460, height
    ════════════════════════════════════════════════════════════════════ */
 
 function PolarityLegend({ height = 380 }) {
-  const W = 116;
-  const cx = 58;
+  const W = 168;
+  const cx = 84;
   const wig_top = 60;
   const wig_h = 200;
   const seg = wig_h / 4;
@@ -1202,6 +1298,8 @@ export default function AVOAtlasV2() {
   // User-editable range for the thickness slider — defaults the user can override
   const [thickness_min, setThicknessMin] = useState(15);
   const [thickness_max, setThicknessMax] = useState(120);
+  const [customElastic, setCustomElastic] = useState(false);
+  const [elasticOverrides, setElasticOverrides] = useState(null);
 
   // ─── View state (Atlas | Guide) ──────────────────────────────────
   const [view, setView] = useState('atlas');
@@ -1216,6 +1314,8 @@ export default function AVOAtlasV2() {
     setHcSat(s.hc_sat);
     setColumnHeight(s.column_height);
     setThickness(s.thickness);
+    setCustomElastic(false);
+    setElasticOverrides(null);
     // Widen thickness slider range if scenario falls outside it
     setThicknessMin(prev => Math.min(prev, s.thickness));
     setThicknessMax(prev => Math.max(prev, s.thickness));
@@ -1225,22 +1325,78 @@ export default function AVOAtlasV2() {
   }, []);
 
   // ─── Derived rock-physics ─────────────────────────────────────────
-  const ob = useMemo(() => {
+  const obDefault = useMemo(() => {
     const h = HARDNESS[ob_hard];
     return { ...h, AI: h.Vp * h.rho / 1000 };
   }, [ob_hard]);
 
-  const ub = useMemo(() => {
+  const ubDefault = useMemo(() => {
     const h = HARDNESS[ub_hard];
     return { ...h, AI: h.Vp * h.rho / 1000 };
   }, [ub_hard]);
 
-  const hc_res = useMemo(() => {
+  const hcResDefault = useMemo(() => {
     const { K_fl, rho_fl } = mixFluid(hc_fluid, hc_sat);
     return gassmannSaturate(lithology, phi, K_fl, rho_fl);
   }, [lithology, phi, hc_fluid, hc_sat]);
 
-  const br_res = useMemo(() => gassmannSaturate(lithology, phi, FLUIDS.brine.K, FLUIDS.brine.rho), [lithology, phi]);
+  const brResDefault = useMemo(() => gassmannSaturate(lithology, phi, FLUIDS.brine.K, FLUIDS.brine.rho), [lithology, phi]);
+
+  const elasticDefaults = useMemo(() => ({
+    ob: obDefault,
+    hc_res: hcResDefault,
+    br_res: brResDefault,
+    ub: ubDefault,
+  }), [obDefault, hcResDefault, brResDefault, ubDefault]);
+
+  const effectiveElastic = useMemo(() => {
+    if (!customElastic || !elasticOverrides) return elasticDefaults;
+
+    const mergeRock = key => {
+      const merged = { ...elasticDefaults[key], ...elasticOverrides[key] };
+      const Vp = Math.max(1, merged.Vp);
+      const Vs = Math.max(1, merged.Vs);
+      const rho = Math.max(0.001, merged.rho);
+      return { ...merged, Vp, Vs, rho, AI: Vp * rho / 1000 };
+    };
+
+    return {
+      ob: mergeRock('ob'),
+      hc_res: mergeRock('hc_res'),
+      br_res: mergeRock('br_res'),
+      ub: mergeRock('ub'),
+    };
+  }, [customElastic, elasticOverrides, elasticDefaults]);
+
+  const { ob, hc_res, br_res, ub } = effectiveElastic;
+
+  const enableCustomElastic = useCallback(() => {
+    setElasticOverrides(elasticDefaults);
+    setCustomElastic(true);
+  }, [elasticDefaults]);
+
+  const resetElasticDefaults = useCallback(() => {
+    setCustomElastic(false);
+    setElasticOverrides(null);
+  }, []);
+
+  const updateElasticValue = useCallback((zone, field, value) => {
+    if (!Number.isFinite(value)) return;
+    setElasticOverrides(prev => {
+      const source = prev || elasticDefaults;
+      const nextRock = {
+        ...source[zone],
+        [field]: value,
+      };
+      return {
+        ...source,
+        [zone]: {
+          ...nextRock,
+          AI: nextRock.Vp * nextRock.rho / 1000,
+        },
+      };
+    });
+  }, [elasticDefaults]);
 
   // ─── Interfaces ───────────────────────────────────────────────────
   // When the pore fluid is pure brine, no HC column exists regardless of slider position.
@@ -1474,16 +1630,15 @@ export default function AVOAtlasV2() {
               )}
             </section>
 
-            <section className="bg-white border border-stone-200 rounded p-4">
-              <h2 className="font-serif text-base text-stone-900 mb-2 pb-2 border-b border-stone-100">Elastic properties</h2>
-              <Stat label="OB · AI" value={ob.AI.toFixed(2)} />
-              <Stat label="HC-sat reservoir · Vp" value={hc_res.Vp.toFixed(0) + ' m/s'} color={FLUIDS[hc_fluid].color} />
-              <Stat label="HC-sat reservoir · ρ"  value={hc_res.rho.toFixed(3) + ' g/cc'} color={FLUIDS[hc_fluid].color} />
-              <Stat label="HC-sat reservoir · AI" value={hc_res.AI.toFixed(2)} color={FLUIDS[hc_fluid].color} />
-              <Stat label="Brine-sat reservoir · Vp" value={br_res.Vp.toFixed(0) + ' m/s'} color={FLUIDS.brine.color} />
-              <Stat label="Brine-sat reservoir · AI" value={br_res.AI.toFixed(2)} color={FLUIDS.brine.color} />
-              <Stat label="UB · AI" value={ub.AI.toFixed(2)} />
-            </section>
+            <ElasticPropertiesPanel
+              defaults={elasticDefaults}
+              values={effectiveElastic}
+              customElastic={customElastic}
+              onEnableCustom={enableCustomElastic}
+              onReset={resetElasticDefaults}
+              onElasticChange={updateElasticValue}
+              hcColor={FLUIDS[hc_fluid].color}
+            />
           </aside>
 
           {/* ── Visualisations ────────────────────────────────────── */}
@@ -1623,7 +1778,25 @@ export default function AVOAtlasV2() {
           top reservoir, fluid contact (when 0 &lt; column &lt; 1), and base reservoir; each gets its own Shuey AVO. The
           synthetic gather is a 30 Hz Ricker convolved with the angle-dependent reflectivity series. Dry-rock moduli for each
           lithology are simple empirical fits, not Hashin–Shtrikman — the numbers are in the right ballpark for learning AVO
-          behaviour, but treat absolute values as illustrative.
+          behaviour, but treat absolute values as illustrative. Created by Behrooz Bashokooh. Find all the code:{' '}
+          <a
+            href="https://github.com/BehroozBashokooh/AVOAtlas"
+            target="_blank"
+            rel="noreferrer"
+            className="text-stone-700 underline underline-offset-2 hover:text-stone-900"
+          >
+            BehroozBashokooh/AVOAtlas
+          </a>
+          .{' '}
+          <a
+            href="https://buymeacoffee.com/behroozbashokooh"
+            target="_blank"
+            rel="noreferrer"
+            className="text-stone-700 underline underline-offset-2 hover:text-stone-900"
+          >
+            Buy me a Coffee
+          </a>
+          .
         </footer>
         </>)}
 
